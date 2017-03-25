@@ -188,7 +188,8 @@ RSpec.describe NIO::Selector do
     it "works with signals on the main thread" do
       1000.times do
         begin
-          pid = fork do
+          pid = Process.spawn('ruby', '-e', <<-'EOF'
+           require 'nio'
             begin
               r, _w = IO.pipe
               selector = NIO::Selector.new
@@ -204,9 +205,10 @@ RSpec.describe NIO::Selector do
               raise if ["TERM", "INT"].none? {|sig| Signal.list[sig] == e.signo}
               $stderr.write("#{Process.pid}: rescued #{e}\n")
             end
-          end
+EOF
+                             )
 
-          sleep(0.1)
+          sleep(1)
         ensure
           $stderr.write("sending term\n")
           Process.kill(:TERM, pid)
